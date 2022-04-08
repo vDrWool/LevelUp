@@ -1,7 +1,7 @@
-set(TARGET ADL)
+set(TARGET Dummy)
 
 set(SOURCE_FILES 
-	ADLMain.cpp
-	ADL.hpp)
+	DummyMain.cpp
+	Dummy.hpp)
 
 add_executable(${TARGET} ${SOURCE_FILES})
