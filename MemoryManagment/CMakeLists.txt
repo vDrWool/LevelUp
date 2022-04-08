@@ -1,7 +1,3 @@
-set(TARGET Dummy)
+set(TARGET MemoryManagment)
 
-set(SOURCE_FILES 
-	DummyMain.cpp
-	Dummy.hpp)
-
-add_executable(${TARGET} ${SOURCE_FILES})
+add_subdirectory(StackAndHeap)
