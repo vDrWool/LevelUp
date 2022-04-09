@@ -1,4 +1,5 @@
 [requires]
+andreasbuhr-cppcoro/cci.20210113
 
 [generators]
 cmake

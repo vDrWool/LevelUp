@@ -1,7 +1,4 @@
-set(TARGET Concurrency++)
+set(TARGET Concurency++)
 
-set(SOURCE_FILES 
-	ThreadMain.cpp
-	Thread.hpp)
-
-add_executable(${TARGET} ${SOURCE_FILES})
+add_subdirectory(Coroutines)
+add_subdirectory(Threads)
