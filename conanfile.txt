@@ -1,5 +1,6 @@
 [requires]
 andreasbuhr-cppcoro/cci.20210113
+boost/1.78.0
 
 [generators]
 cmake
