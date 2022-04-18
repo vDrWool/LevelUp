@@ -16,6 +16,9 @@ int main() {
         st_g_weak = st;
         my_g_weak = my;
 
+        std::cout << "Expired? " << st_g_weak.expired() << '\n';
+        std::cout << "Expired? " << my_g_weak.expired() << '\n';
+
         {
             std::weak_ptr<example::Obj> st_weak = st;
             mem::weak_ptr<example::Obj> my_weak = my;
@@ -48,6 +51,9 @@ int main() {
         print(st);
         print(my);
     }
+
+    std::cout << "Expired? " << st_g_weak.expired() << std::endl;
+    std::cout << "Expired? " << my_g_weak.expired() << std::endl;
 
     return EXIT_SUCCESS;
 }
