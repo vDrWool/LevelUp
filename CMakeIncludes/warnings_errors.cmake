@@ -23,6 +23,7 @@ set(MSVC_WARNINGS
         #/w14928 # illegal copy-initialization; more than one user-defined conversion has been implicitly applied
         #/permissive- # standards conformance mode for MSVC compiler.
         /WX
+        /fsanitize=address
     )
 
     set(CLANG_WARNINGS
@@ -42,6 +43,7 @@ set(MSVC_WARNINGS
         #-Wnull-dereference # warn if a null dereference is detected
         #-Wdouble-promotion # warn if float is implicit promoted to double
         #-Wformat=2 # warn on security issues around functions that format output (ie printf)
+        -fsanitize=address
     )
 
     set(GCC_WARNINGS
