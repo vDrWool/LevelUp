@@ -5,6 +5,8 @@ project(LevelUp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+message(STATUS "C++ version: " ${CMAKE_CXX_STANDARD})
+
 Include(CMakeIncludes/conan.cmake)
 Include(CMakeIncludes/warnings_errors.cmake)
 
