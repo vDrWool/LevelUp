@@ -1,3 +1,7 @@
 set(TARGET MoveSemantics)
 
-add_subdirectory(CopyEllision)
+set(SOURCE_FILES 
+	DummyMain.cpp
+	Dummy.hpp)
+
+add_executable(${TARGET} ${SOURCE_FILES})
