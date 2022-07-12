@@ -10,9 +10,9 @@
 using namespace std::chrono_literals;
 
 #include "cppcoro/generator.hpp"
+#include "cppcoro/sync_wait.hpp"
 #include "cppcoro/task.hpp"
 #include "cppcoro/when_all_ready.hpp"
-#include "cppcoro/sync_wait.hpp"
 
 namespace example_1 {
 cppcoro::generator<std::uint64_t> sum(std::uint64_t number) {
@@ -27,32 +27,30 @@ void start() {
     for (auto i : example_1::sum(number)) {
         std::cout << std::setw(2) << i << " ";
 
-        if (i % 5 == 0 && i != 0)
-            endl(std::cout);
-        if (i == 20)
-            break;
+        if (i % 5 == 0 && i != 0) endl(std::cout);
+        if (i == 20) break;
 
         std::this_thread::sleep_for(0.2s);
     }
 }
-} // namespace example_1
+}  // namespace example_1
 
 namespace example_2 {
 cppcoro::task<std::string> get_str() {
-    constexpr const char alphanum[] = "0123456789"
-                                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                      "abcdefghijklmnopqrstuvwxyz";
+    constexpr const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int<std::uint32_t> dist(10, static_cast<std::uint32_t>(std::ssize(alphanum) - 1));
+    std::uniform_int_distribution<std::uint32_t> dist{10, static_cast<std::uint32_t>(std::ssize(alphanum) - 1)};
     auto rand = std::bind(dist, gen);
 
     std::string str;
     const std::uint32_t iterations = rand();
     str.reserve(iterations);
-    for (std::size_t idx = 0; idx < iterations; idx++)
-        str.push_back(alphanum[rand()]);
+    for (std::size_t idx = 0; idx < iterations; idx++) str.push_back(alphanum[rand()]);
 
     co_return str;
 }
@@ -65,7 +63,7 @@ cppcoro::task<> run() {
     }
 
     auto resultTasks = co_await cppcoro::when_all_ready(std::move(vec));
-    
+
     for (auto& task : resultTasks) {
         try {
             std::cout << task.result() << "\n";
@@ -73,9 +71,9 @@ cppcoro::task<> run() {
             std::cout << ex.what() << std::endl;
         }
     }
-    
+
     co_return;
 }
 
 void start() { cppcoro::sync_wait(run()); }
-} // namespace example_2
+}  // namespace example_2
