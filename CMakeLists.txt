@@ -9,7 +9,6 @@ Include(CMakeIncludes/conan.cmake)
 Include(CMakeIncludes/warnings_errors.cmake)
 
 #add_subdirectory(Concurrency++)
-add_subdirectory(MoveSemantics)
 add_subdirectory(ADL)
 add_subdirectory(Idioms)
 add_subdirectory(RTTI)

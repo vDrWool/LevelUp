@@ -66,66 +66,64 @@ class string {
 
     using iterator = string_iterator;
     using const_iterator = const string_iterator;
-    // using reverse_iterator       = ;
-    // using const_reverse_iterator = ;
 
-    static constexpr size_type __short_mask = std::endian::native == std::endian::big ? 0x01 : 0x80;
-    static constexpr size_type __long_mask = std::endian::native == std::endian::big ? 0x1ul : ~(size_type(~0) >> 1);
+    static constexpr size_type mc_short_mask = std::endian::native == std::endian::big ? 0x01 : 0x80;
+    static constexpr size_type mc_long_mask = std::endian::native == std::endian::big ? 0x1ul : ~(size_type(~0) >> 1);
 
-    struct __long {
+    struct long_str_t {
         size_type cap;
         size_type size;
         pointer data;
     };
 
-    constexpr static size_type __min_cap = (sizeof(__long) - 1 / sizeof(size_type)) > 2
-                                               ? (sizeof(__long) - 1) / sizeof(value_type)
+    constexpr static size_type mc_min_cap = (sizeof(long_str_t) - 1 / sizeof(size_type)) > 2
+                                               ? (sizeof(long_str_t) - 1) / sizeof(value_type)
                                                : 2;
 
-    struct __short {
+    struct short_str_t {
         std::uint8_t size;
-        value_type data[__min_cap];
+        value_type data[mc_min_cap];
     };
 
-    // Just for calculating __n_words
-    union __ulx {
-        __long lx;
-        __short sx;
+    // Just for calculating n_words
+    union ulx_t {
+        long_str_t lx;
+        short_str_t sx;
     };
 
-    constexpr static size_type __n_words = sizeof(__ulx) / sizeof(size_type);
+    constexpr static size_type n_words = sizeof(ulx_t) / sizeof(size_type);
 
-    struct __raw {
+    struct raw_str_t {
         size_type words[__n_words];
     };
 
-    struct __storage {
+    struct storage_t {
         union {
-            __long l;
-            __short s;
-            __raw r;
+            long_str_t l;
+            short_str_t s;
+            raw_str_t r;
         };
     };
 
-    std::pair<__storage, allocator_type> storage;
+    std::pair<storage_t, allocator_type> m_storage;
 
    private:
-    inline __long& get_long() noexcept { return storage.first.l; }
-    inline __short& get_short() noexcept { return storage.first.s; }
-    inline __raw& get_raw() noexcept { return storage.first.r; }
+    inline long_str_t& get_long() noexcept { return m_storage.first.l; }
+    inline short_str_t& get_short() noexcept { return m_storage.first.s; }
+    inline raw_str_t& get_raw() noexcept { return m_storage.first.r; }
 
-    inline const __long& read_long() const noexcept { return storage.first.l; }
-    inline const __short& read_short() const noexcept { return storage.first.s; }
-    inline const __raw& read_raw() const noexcept { return storage.first.r; }
+    inline const long_str_t& read_long() const noexcept { return m_storage.first.l; }
+    inline const short_str_t& read_short() const noexcept { return m_storage.first.s; }
+    inline const raw_str_t& read_raw() const noexcept { return m_storage.first.r; }
 
-    inline bool is_long() const noexcept { return read_short().size & __short_mask; }
+    inline bool is_long() const noexcept { return read_short().size & mc_short_mask; }
 
-    inline allocator_type& get_alloc() noexcept { return storage.second; }
+    inline allocator_type& get_alloc() noexcept { return m_storage.second; }
 
     size_type to_alligned(size_type size) const noexcept {
-        constexpr size_type __offset = __min_cap + 1;
+        constexpr size_type offset = mc_min_cap + 1;
 
-        return (size - size / __offset) + __offset;
+        return (size - size / offset) + offset;
     }
 
     // void set_short_pointer(const_pointer pointer) { traits_type:: get_short().data; }
@@ -137,13 +135,13 @@ class string {
         if (c_str == nullptr) throw std::runtime_error("c_str is empty!");
 
         const size_type c_str_len = std::strlen(c_str);
-        if (c_str_len < __min_cap) {
-            __short& short_ref = get_short();
+        if (c_str_len < mc_min_cap) {
+            short_str_t& short_ref = get_short();
 
             short_ref.size = static_cast<std::uint8_t>(c_str_len);
             std::copy(c_str, c_str + c_str_len, short_ref.data);
         } else {
-            __long& long_ref = get_long();
+            long_str_t& long_ref = get_long();
 
             long_ref.size = c_str_len;
             long_ref.cap = to_alligned(c_str_len);
@@ -157,7 +155,7 @@ class string {
 
     ~string() {
         if (is_long()) {
-            __long& long_ref = get_long();
+            long_str_t& long_ref = get_long();
 
             traits_type::deallocate(get_alloc(), long_ref.data, long_ref.cap);
         }
@@ -181,11 +179,11 @@ class string {
 
     friend std::ostream& operator<<(std::ostream& os, const string& str) {
         if (str.is_long()) {
-            const __long& long_ref = str.read_long();
+            const long_str_t& long_ref = str.read_long();
 
             std::copy(long_ref.data, long_ref.data + long_ref.size, std::ostream_iterator<string::value_type>(os, ""));
         } else {
-            const __short& short_ref = str.read_short();
+            const short_str_t& short_ref = str.read_short();
 
             std::copy(short_ref.data, short_ref.data + short_ref.size,
                       std::ostream_iterator<string::value_type>(os, ""));
