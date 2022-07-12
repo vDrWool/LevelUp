@@ -1,16 +1,37 @@
 #include "String.hpp"
 
 int main() {
-    str::string str1("ac");
-    str::string str2("ca");
+    // Clear str
+    {
+        str::string str("asafasfasfasfasfxzvasfasfafasffafssfxzgx");
+        
+        std::cout << str << std::endl;
+        
+        str.clear();
 
-    str1.swap(str2);
-
-    std::cout << str1 << " " << str2 << "\n";
-
-    for (auto c : str1) {
-        std::cout << c;
+        std::cout << str << std::endl;
     }
+    // Check copy cnst
+    {
+        str::string str1("ac");
+        str::string str2 = str1;
 
+        std::cout << str1 << " " << str2 << std::endl;
+
+        str1 = str2;
+
+        std::cout << str1 << " " << str2 << std::endl;
+    }
+    // Check move cnst
+    {
+        str::string str1("ac");
+        str::string str2 = std::move(str1);
+
+        std::cout << std::setw(3) << str1 << " " << str2 << std::endl;
+
+        str1 = std::move(str2);
+
+        std::cout << str1 << " " << str2 << std::endl;
+    }
     return EXIT_SUCCESS;
 }

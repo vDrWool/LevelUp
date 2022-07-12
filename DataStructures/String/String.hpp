@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <bit>
 #include <iostream>
+#include <iomanip>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -67,9 +68,6 @@ class string {
     using iterator = string_iterator;
     using const_iterator = const string_iterator;
 
-    static constexpr size_type mc_short_mask = std::endian::native == std::endian::big ? 0x01 : 0x80;
-    static constexpr size_type mc_long_mask = std::endian::native == std::endian::big ? 0x1ul : ~(size_type(~0) >> 1);
-
     struct long_str_t {
         size_type cap;
         size_type size;
@@ -77,8 +75,10 @@ class string {
     };
 
     constexpr static size_type mc_min_cap = (sizeof(long_str_t) - 1 / sizeof(size_type)) > 2
-                                               ? (sizeof(long_str_t) - 1) / sizeof(value_type)
-                                               : 2;
+                                                ? (sizeof(long_str_t) - 1) / sizeof(value_type)
+                                                : 2;
+
+    static constexpr size_type mc_bit_mask = std::endian::native == std::endian::big ? 0x01 : 0x60;
 
     struct short_str_t {
         std::uint8_t size;
@@ -91,10 +91,10 @@ class string {
         short_str_t s;
     };
 
-    constexpr static size_type number_of_words = sizeof(temp_t) / sizeof(size_type);
+    constexpr static size_type mc_number_of_words = sizeof(temp_t) / sizeof(size_type);
 
     struct raw_str_t {
-        size_type words[number_of_words];
+        size_type words[mc_number_of_words];
     };
 
     struct storage_t {
@@ -104,6 +104,10 @@ class string {
             raw_str_t r;
         };
     };
+
+    constexpr static size_type long_size = sizeof(long_str_t);
+    constexpr static size_type short_size = sizeof(short_str_t);
+    constexpr static size_type raw_size = sizeof(raw_str_t);
 
     std::pair<storage_t, allocator_type> m_storage;
 
@@ -116,7 +120,7 @@ class string {
     inline const short_str_t& read_short() const noexcept { return m_storage.first.s; }
     inline const raw_str_t& read_raw() const noexcept { return m_storage.first.r; }
 
-    inline bool is_long() const noexcept { return read_short().size & mc_short_mask; }
+    inline bool is_long() const noexcept { return read_short().size & mc_bit_mask; }
 
     inline allocator_type& get_alloc() noexcept { return m_storage.second; }
 
@@ -126,13 +130,11 @@ class string {
         return (size - size / offset) + offset;
     }
 
-    // void set_short_pointer(const_pointer pointer) { traits_type:: get_short().data; }
-
    public:
     constexpr string() noexcept = default;
 
-    string(const_pointer c_str, /*const*/ allocator_type /*&*/ alloc = allocator_type()) {
-        if (c_str == nullptr) throw std::runtime_error("c_str is empty!");
+    string(const_pointer c_str, allocator_type alloc = allocator_type()) {
+        if (c_str == nullptr) throw std::runtime_error("c_str cannot be null!");
 
         const size_type c_str_len = std::strlen(c_str);
         if (c_str_len < mc_min_cap) {
@@ -147,11 +149,31 @@ class string {
             long_ref.cap = to_alligned(c_str_len);
 
             long_ref.data = traits_type::allocate(get_alloc(), long_ref.cap);
+            if (long_ref.data == nullptr) throw std::bad_alloc();
+
             std::copy(c_str, c_str + c_str_len, long_ref.data);
         }
 
         get_alloc() = std::move(alloc);
     }
+
+    string(const string& other) {
+        const raw_str_t& raw_other_ref = other.read_raw();
+
+        std::copy(raw_other_ref.words, raw_other_ref.words + mc_number_of_words, get_raw().words);
+
+        if (is_long()) {
+            long_str_t& long_ref = get_long();
+
+            long_ref.data = traits_type::allocate(get_alloc(), long_ref.cap);
+            if (long_ref.data == nullptr) throw std::bad_alloc();
+
+            const long_str_t& long_other_ref = other.read_long();
+            std::copy(long_other_ref.data, long_other_ref.data + long_other_ref.size, long_ref.data);
+        }
+    }
+
+    string(string&& other) noexcept { swap(other); }
 
     ~string() {
         if (is_long()) {
@@ -162,32 +184,44 @@ class string {
     }
 
    public:
+    string& operator=(const string& other) {
+        string tmp{other};
+        swap(tmp);
+
+        return *this;
+    }
+
+    string& operator=(string&& other) noexcept {
+        swap(other);
+
+        return *this;
+    }
+
    public:
     void swap(string& other) noexcept { std::swap(get_raw().words, other.get_raw().words); }
 
     size_type size() const noexcept { return is_long() ? read_long().size : static_cast<size_type>(read_short().size); }
+
+    void clear() noexcept {
+        this->~string();
+
+        raw_str_t& raw_ref = get_raw();
+        std::fill(raw_ref.words, raw_ref.words + mc_number_of_words, 0);
+    }
+
+    bool empty() const noexcept { return size() == 0; }
+
     iterator begin() const noexcept {
         if (is_long()) {
-            return read_long().data;
+            return { read_long().data };
         } else {
-            return const_cast<char*>(read_short().data);  // TODO: how to delete const_cast???
+            return { const_cast<char*>(read_short().data) };  // TODO: how to delete const_cast???
         }
     }
-    iterator end() const noexcept {
-        return begin() + size();
-    }
+    iterator end() const noexcept { return begin() + size(); }
 
     friend std::ostream& operator<<(std::ostream& os, const string& str) {
-        if (str.is_long()) {
-            const long_str_t& long_ref = str.read_long();
-
-            std::copy(long_ref.data, long_ref.data + long_ref.size, std::ostream_iterator<string::value_type>(os, ""));
-        } else {
-            const short_str_t& short_ref = str.read_short();
-
-            std::copy(short_ref.data, short_ref.data + short_ref.size,
-                      std::ostream_iterator<string::value_type>(os, ""));
-        }
+        std::copy(str.begin(), str.end(), std::ostream_iterator<string::value_type>(os, ""));
 
         return os;
     }
