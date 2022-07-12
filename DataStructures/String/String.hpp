@@ -85,16 +85,16 @@ class string {
         value_type data[mc_min_cap];
     };
 
-    // Just for calculating n_words
-    union ulx_t {
-        long_str_t lx;
-        short_str_t sx;
+    // Just for calculating number of words
+    union temp_t {
+        long_str_t l;
+        short_str_t s;
     };
 
-    constexpr static size_type n_words = sizeof(ulx_t) / sizeof(size_type);
+    constexpr static size_type number_of_words = sizeof(temp_t) / sizeof(size_type);
 
     struct raw_str_t {
-        size_type words[__n_words];
+        size_type words[number_of_words];
     };
 
     struct storage_t {
